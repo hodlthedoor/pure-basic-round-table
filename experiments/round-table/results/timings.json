@@ -1,0 +1,159 @@
+{
+  "compiler": "PureBasic 6.41 Free, C backend, macOS arm64",
+  "runs_per_count": 5,
+  "measurement": "Process launch + generation + text output, excluding Python verification",
+  "results": [
+    {
+      "people": 3,
+      "sittings": 1,
+      "verified": true,
+      "method": "projective finite field",
+      "median_ms": 6.012,
+      "maximum_ms": 9.584
+    },
+    {
+      "people": 4,
+      "sittings": 3,
+      "verified": true,
+      "method": "projective finite field",
+      "median_ms": 5.215,
+      "maximum_ms": 5.955
+    },
+    {
+      "people": 5,
+      "sittings": 6,
+      "verified": true,
+      "method": "projective finite field",
+      "median_ms": 5.187,
+      "maximum_ms": 6.465
+    },
+    {
+      "people": 6,
+      "sittings": 10,
+      "verified": true,
+      "method": "projective finite field",
+      "median_ms": 5.521,
+      "maximum_ms": 7.111
+    },
+    {
+      "people": 7,
+      "sittings": 15,
+      "verified": true,
+      "method": "cyclic starters",
+      "median_ms": 6.384,
+      "maximum_ms": 6.79
+    },
+    {
+      "people": 8,
+      "sittings": 21,
+      "verified": true,
+      "method": "projective finite field",
+      "median_ms": 5.838,
+      "maximum_ms": 6.726
+    },
+    {
+      "people": 9,
+      "sittings": 28,
+      "verified": true,
+      "method": "projective finite field",
+      "median_ms": 4.472,
+      "maximum_ms": 5.776
+    },
+    {
+      "people": 10,
+      "sittings": 36,
+      "verified": true,
+      "method": "projective finite field",
+      "median_ms": 5.055,
+      "maximum_ms": 5.836
+    },
+    {
+      "people": 11,
+      "sittings": 45,
+      "verified": true,
+      "method": "cyclic starters",
+      "median_ms": 5.593,
+      "maximum_ms": 6.34
+    },
+    {
+      "people": 12,
+      "sittings": 55,
+      "verified": true,
+      "method": "projective finite field",
+      "median_ms": 7.017,
+      "maximum_ms": 9.128
+    },
+    {
+      "people": 13,
+      "sittings": 66,
+      "verified": true,
+      "method": "cyclic starters",
+      "median_ms": 5.981,
+      "maximum_ms": 7.371
+    },
+    {
+      "people": 14,
+      "sittings": 78,
+      "verified": true,
+      "method": "projective finite field",
+      "median_ms": 5.273,
+      "maximum_ms": 6.821
+    },
+    {
+      "people": 15,
+      "sittings": 91,
+      "verified": true,
+      "method": "cyclic starters",
+      "median_ms": 5.926,
+      "maximum_ms": 7.464
+    },
+    {
+      "people": 16,
+      "sittings": 105,
+      "verified": true,
+      "method": "cyclic starters",
+      "median_ms": 5.845,
+      "maximum_ms": 6.253
+    },
+    {
+      "people": 17,
+      "sittings": 120,
+      "verified": true,
+      "method": "projective finite field",
+      "median_ms": 6.775,
+      "maximum_ms": 7.33
+    },
+    {
+      "people": 18,
+      "sittings": 136,
+      "verified": true,
+      "method": "projective finite field",
+      "median_ms": 6.737,
+      "maximum_ms": 7.158
+    },
+    {
+      "people": 19,
+      "sittings": 153,
+      "verified": true,
+      "method": "cyclic starters",
+      "median_ms": 6.139,
+      "maximum_ms": 6.932
+    },
+    {
+      "people": 20,
+      "sittings": 171,
+      "verified": true,
+      "method": "projective finite field",
+      "median_ms": 7.455,
+      "maximum_ms": 7.83
+    },
+    {
+      "people": 21,
+      "sittings": 190,
+      "verified": true,
+      "method": "cyclic starters",
+      "median_ms": 6.043,
+      "maximum_ms": 6.265
+    }
+  ]
+}

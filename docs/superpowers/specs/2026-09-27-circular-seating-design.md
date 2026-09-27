@@ -1,36 +1,48 @@
-# Circular seating calculator design
+# Dudeney round-table solver design
 
-Status: draft for review; implementation has not started.
+Status: approved and implemented. Verification evidence is recorded in the execution ledger.
 
-## Agreed scope
+## Goal and rules
 
-Create a PureBasic desktop calculator for 1–21 distinct people around a round table. Show the exact number of arrangements, the calculation, and one illustrative seating diagram. Rotations count as the same arrangement; reflected orders count as different when not equivalent by rotation. No seating constraints or enumeration of all arrangements.
+Build a PureBasic desktop application that generates one valid solution to Dudeney's problem 273 for each count from 3 to 21. Present solutions as aligned numerical rows in the author's style, with a circular diagram of the selected row.
 
-## Proposed interaction
+A schedule has (n - 1)(n - 2) / 2 sittings. Every row contains each person exactly once, and the last and first entries are neighbours. Across the schedule, each person sits between every unordered pair of other people exactly once. Reversing the pair does not make it new.
 
-Use one fixed-size window, initially 760 × 760 logical units, with a labelled people-count input, Calculate button, result, worked explanation, and table drawing. Start with 5 people and its calculated result. Support Calculate by mouse and Enter by keyboard.
+Examples: 3 people require 1 sitting; 5 require 6; 13 require 66; 21 require 190. Labels identify people and run from 1 to n. One or two people cannot have two distinct neighbours and are outside this problem's range.
 
-Accept whole-number text from 1 through 21, allowing surrounding spaces and leading zeros. Reject empty input, signs, decimals, letters, and out-of-range numbers with “Enter a whole number from 1 to 21.” Validate before numeric conversion, including very long pasted input. Editing the input clears the previous result and diagram so they cannot be mistaken for the new input's answer.
+## Verified generation methods
 
-For 5 people, show “24 arrangements” and “(5 - 1)! = 4 × 3 × 2 × 1 = 24”. Explain: “Fix person 1's position, then arrange the remaining people.” For 1 person, show “(1 - 1)! = 0! = 1” and explain that there is one arrangement. Wrap the working so the full expansion for 21 people remains readable. Display exact decimal integers, never scientific notation.
+Use the [feasibility report](../../references/solver-feasibility.md) as the algorithm and provenance reference. For the twelve counts it lists, construct a projective cycle over a finite field and expand affine images. For the remaining seven counts, expand the 49 attributed starting rows by their label cycles. Complete schedules are generated at runtime and verified before display.
 
-Draw a round table with people numbered 1 through n, evenly spaced clockwise. Place person 1 at the top, highlight their marker, and label them as the fixed person. Caption: “One example arrangement”. All 21 markers must fit without overlapping or clipped labels. Number labels identify people, not numbered seats.
+This is a deliberate implementation choice: known compact construction seeds are part of the application. Finding new seeds through an unconstrained search is outside the initial scope. No runtime lookup table of complete schedules is needed.
 
-## Implementation constraints
+## Window and output
 
-- PureBasic with built-in GUI and drawing facilities; no added dependencies.
-- Accept 1–21 people only; use signed 64-bit `.q` arithmetic for counts.
-- Keep calculation independent of GUI and drawing.
-- Target the current macOS workspace first; cross-platform verification is outside this initial scope.
+Use one resizable native window, initially 1100 by 760 logical units, minimum 900 by 680. The top row has a labelled count input, Generate, Cancel, and a status message. Below it, use the left side for a scrollable monospaced list of seatings and the right side for a circular diagram and an explanation of the construction. Allocate at least 630 logical units to the row display at the initial size; allow horizontal scrolling at smaller sizes.
 
-Compute (n - 1)! by integer multiplication. The maximum result is 20! = 2432902008176640000. Future support above 21 will require a larger integer representation and reconsideration of diagram density; no arbitrary-precision implementation is included now.
+Start with 5 people and automatically generate the first solution. The Generate button and Enter use the same action. Accept decimal digit text with surrounding spaces and leading zeros; reject blank input, signs, decimals, letters, and out-of-range or overflowing values with “Enter a whole number from 3 to 21.” Editing input clears the previous result and cancels pending work.
 
-## Acceptance
+In the main list, show all sittings as right-aligned two-character numbers. A heading shows the people and sitting counts. Group separators are non-seating items and cannot become diagram selections. Use them only for groups produced by the chosen construction. Explain that each row wraps around the table.
 
-Correct counts for 1, 2, 3, 5, and 21 people; clear rejection of invalid input; readable drawing at both ends of the range; calculation and picture consistently reflect the submitted input. The application opens, responds to keyboard and mouse, and closes normally.
+For cyclic-starting-row cases, offer a compact view showing the starting rows, fixed labels, and cycle instructions. Selecting a compact row shows that starting seating. Switching back selects its first expanded seating. In algebraic cases show the complete schedule and a plain explanation of the construction, without pretending that ordinary integer increments describe finite-field arithmetic.
 
-## Environment and references
+The diagram follows the selected row clockwise, with the first listed person at the top. Highlight that person and label the marker as the start of the displayed row. It must not imply that this person is always a fixed repeater. All 21 markers must be legible and fit without overlap.
 
-The workspace was empty when planning began. `pbcompiler` was not found on PATH; locate an installed PureBasic compiler or IDE before implementation verification. No compiler version has been confirmed.
+## Execution and correctness
 
-Official references: [PureBasic numeric types](https://www.purebasic.com/documentation/reference/variables.html) and [CanvasGadget](https://www.purebasic.com/documentation/gadget/canvasgadget.html).
+Generate in small batches driven by the event loop so Cancel and window events remain responsive. Editing input, starting a new job, or closing the window invalidates the previous job. Only the current job can publish output. Completion includes independent verification of all rows and neighbour pairs. An error or cancellation must not leave partial rows labelled as a solution.
+
+Use states Idle, Running, Verified, Cancelled, and Failed. The selected methods use bounded loops and no open-ended search, so no search-timeout setting is needed in this version. Display failures as construction or verification errors, not as proof of impossibility.
+
+## Constraints and acceptance
+
+- Delivered application in PureBasic using built-in GUI and drawing facilities.
+- Support every integer count from 3 to 21.
+- Ship attributed construction data; runtime requires no Python or network access.
+- Keep generation, verification, and presentation separate.
+- Verify on the current macOS arm64 installation with PureBasic 6.41 Free.
+- Discuss any new dependency before adding it.
+
+Acceptance requires all 19 counts to pass the independent verifier, readable expanded and applicable compact views, correct row selection and drawing, and cancellation without stale results. Test repeated generation in one process, including 21, 3, 17, and 5, to catch retained state. GUI checks include the smallest window size and the 190-row output.
+
+The 21-person limit now bounds validated constructions rather than factorial arithmetic. Extending it requires more verified construction coverage.
