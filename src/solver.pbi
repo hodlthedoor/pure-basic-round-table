@@ -96,6 +96,10 @@ Procedure.i AdvanceGeneration(*job.GenerationJob, maxCandidates.i)
     EndIf
   Next
   If *job\cursor = *job\totalCandidates
+    If Not *job\cyclic And Not CompactProjective(*job)
+      FailGeneration(*job, "The shortened schedule could not be verified.")
+      ProcedureReturn *job\state
+    EndIf
     If VerifySchedule(@*job\result)
       *job\state = #Verified
     Else

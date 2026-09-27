@@ -165,12 +165,45 @@ Procedure TestPresentation()
   Check(Bool(StartingRowIndex(@job, -1) = -1 And StartingRowIndex(@job, 190) = -1), "invalid selections rejected")
 EndProcedure
 
+Procedure TestCompactCoverage()
+  Protected job.GenerationJob, expanded.Schedule, row.SeatingRow
+  Protected n.i, g.i, turn.i, i.i, r.i
+  For n = 3 To 21
+    BeginGeneration(n, n, @job) : CompleteJob(@job)
+    Check(Bool(job\state = #Verified And job\cyclic), "shortened metadata available " + Str(n))
+    If Not job\cyclic : Continue : EndIf
+    Check(Bool(job\groupCount * job\period = job\result\rowCount), "compact groups cover schedule " + Str(n))
+    If n > 3 : Check(Bool(job\groupCount < job\result\rowCount), "view actually shortens " + Str(n)) : EndIf
+    ResetStructure(@expanded, Schedule)
+    expanded\people = n
+    For g = 0 To job\groupCount - 1
+      CopyStructure(@job\starters[g], @row, SeatingRow)
+      For turn = 0 To job\period - 1
+        r = expanded\rowCount
+        CopyStructure(@row, @expanded\rows[r], SeatingRow)
+        Check(Bool(StartingRowIndex(@job, r) = g * job\period), "starting-row mapping " + Str(n))
+        For i = 0 To n - 1
+          Check(Bool(row\person[i] = job\result\rows[r]\person[i]), "shortened expansion equals displayed sitting " + Str(n))
+          row\person[i] = job\successor[row\person[i]]
+        Next
+        expanded\rowCount + 1
+      Next
+      For i = 0 To n - 1
+        Check(Bool(row\person[i] = job\starters[g]\person[i]), "cycle returns to starter " + Str(n))
+      Next
+    Next
+    Check(VerifySchedule(@expanded), "independently verified compact expansion " + Str(n))
+    If n = 5 : Check(Bool(job\groupCount = 2 And job\period = 3), "five people have two three-sitting groups") : EndIf
+  Next
+EndProcedure
+
 OpenConsole()
 TestVerification()
 TestInput()
 TestGeneration()
 TestCancellation()
 TestPresentation()
+TestCompactCoverage()
 PrintN(Str(Checks) + " checks, " + Str(Failures) + " failures")
 If Failures : End 1 : EndIf
 End 0

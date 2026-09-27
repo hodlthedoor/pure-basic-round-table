@@ -15,7 +15,8 @@ Enumeration
   #Status
   #RowsHeading
   #RowsHint
-  #Compact
+  #ViewLabel
+  #ViewMode
   #Rows
   #SelectedHeading
   #SelectedHint
@@ -33,6 +34,8 @@ EndEnumeration
 #GenerationTimer = 1
 #ActionGenerate = 1
 #ActionCancel = 2
+#ShortenedView = 0
+#ExtendedView = 1
 
 XIncludeFile "drawing.pbi"
 
@@ -68,8 +71,9 @@ Procedure LayoutWindow()
   ResizeGadget(#Generate, 208, 99, 118, 36)
   ResizeGadget(#Cancel, 334, 99, 94, 36)
   ResizeGadget(#Status, 450, 103, width - 474, 44)
-  ResizeGadget(#RowsHeading, 24, 158, leftWidth - 175, 27)
-  ResizeGadget(#Compact, 24 + leftWidth - 174, 157, 174, 27)
+  ResizeGadget(#RowsHeading, 24, 158, leftWidth - 210, 27)
+  ResizeGadget(#ViewLabel, 24 + leftWidth - 205, 160, 42, 27)
+  ResizeGadget(#ViewMode, 24 + leftWidth - 162, 155, 162, 30)
   ResizeGadget(#RowsHint, 24, 187, leftWidth, 40)
   ResizeGadget(#Rows, 24, 232, leftWidth, height - 256)
   ResizeGadget(#SelectedHeading, rightX, 158, rightWidth, 27)
@@ -83,7 +87,7 @@ EndProcedure
 Procedure ClearDisplay(message.s)
   PublishedJobId = 0 : SelectedRow = -1 : SelectedItem = -1
   ClearGadgetItems(#Rows)
-  SetGadgetState(#Compact, 0) : DisableGadget(#Compact, #True)
+  DisableGadget(#ViewMode, #True)
   SetGadgetText(#RowsHeading, "Seating schedule")
   SetGadgetText(#RowsHint, "One row per sitting. The last person sits next to the first.")
   SetGadgetText(#SelectedHeading, "The circular seating")
@@ -119,7 +123,7 @@ Procedure SelectRowItem(item.i)
   EndIf
   SelectedItem = item : SelectedRow = index
   SetGadgetState(#Rows, item)
-  If GetGadgetState(#Compact)
+  If GetGadgetState(#ViewMode) = #ShortenedView
     SetGadgetText(#SelectedHeading, "Starting row " + Str(AppJob\result\rows[index]\group))
   Else
     SetGadgetText(#SelectedHeading, "Sitting " + Str(index + 1) + " of " + Str(AppJob\result\rowCount))
@@ -129,9 +133,11 @@ Procedure SelectRowItem(item.i)
 EndProcedure
 
 Procedure PopulateRows()
-  Protected r.i, item.i, lastGroup.i, compact.i = GetGadgetState(#Compact)
+  Protected r.i, item.i, lastGroup.i, compact.i = Bool(GetGadgetState(#ViewMode) = #ShortenedView)
   Protected wanted.i = SelectedRow, target.i = -1
+  Protected Dim origin.d(1) ; Native NSPoint (x, y), initially zero.
   ClearGadgetItems(#Rows)
+  CocoaMessage(0, GadgetID(#Rows), "scrollPoint:@", @origin(0))
   If compact : wanted = StartingRowIndex(@AppJob, wanted) : EndIf
   If wanted < 0 : wanted = 0 : EndIf
   For r = 0 To AppJob\result\rowCount - 1
@@ -147,8 +153,16 @@ Procedure PopulateRows()
     If r = wanted : target = item : EndIf
   Next
   If compact
-    SetGadgetText(#RowsHeading, Str(AppJob\groupCount) + " starting rows")
-    SetGadgetText(#RowsHint, Str(AppJob\result\rowCount) + " sittings after expansion. Follow the cycles on the right.")
+    If AppJob\result\rowCount = 1
+      SetGadgetText(#RowsHeading, "1 starting row / 1 sitting")
+    Else
+      SetGadgetText(#RowsHeading, Str(AppJob\groupCount) + " starting rows / " + Str(AppJob\result\rowCount) + " sittings")
+    EndIf
+    If AppJob\result\rowCount = 1
+      SetGadgetText(#RowsHint, "Both views show the single required sitting.")
+    Else
+      SetGadgetText(#RowsHint, Str(AppJob\result\rowCount) + " sittings in Extended view. Follow the cycles on the right.")
+    EndIf
   Else
     SetGadgetText(#RowsHeading, Str(AppJob\result\rowCount) + " sittings for " + Str(AppJob\result\people) + " people")
     SetGadgetText(#RowsHint, "One row per sitting. The last person sits next to the first.")
@@ -184,7 +198,7 @@ Procedure GenerationTick()
       If AppJob\id <> CurrentJobId : ProcedureReturn : EndIf
       PublishedJobId = CurrentJobId
       SetGadgetText(#Status, "Verified: every neighbour pair appears once.")
-      DisableGadget(#Compact, Bool(Not AppJob\cyclic))
+      DisableGadget(#ViewMode, #False)
       SetGadgetText(#DetailsHeading, "How to read this solution")
       SetGadgetText(#Details, ConstructionDetails(@AppJob))
       PopulateRows()
@@ -214,7 +228,7 @@ Procedure.i HandleWindowEvent(event.i)
           If EventType() = #PB_EventType_Change : InvalidateGeneration("Ready to generate.") : EndIf
         Case #Generate : StartGeneration()
         Case #Cancel : InvalidateGeneration("Generation cancelled.")
-        Case #Compact
+        Case #ViewMode
           If PublishedJobId = CurrentJobId And AppJob\state = #Verified : PopulateRows() : EndIf
         Case #Rows
           If EventType() = #PB_EventType_Change Or EventType() = #PB_EventType_LeftClick
@@ -249,7 +263,11 @@ Procedure.i OpenApplication()
   TextGadget(#Status, 0, 0, 1, 1, "")
   TextGadget(#RowsHeading, 0, 0, 1, 1, "")
   TextGadget(#RowsHint, 0, 0, 1, 1, "")
-  CheckBoxGadget(#Compact, 0, 0, 1, 1, "Starting rows")
+  TextGadget(#ViewLabel, 0, 0, 1, 1, "View")
+  ComboBoxGadget(#ViewMode, 0, 0, 1, 1)
+  AddGadgetItem(#ViewMode, -1, "Shortened")
+  AddGadgetItem(#ViewMode, -1, "Extended")
+  SetGadgetState(#ViewMode, #ShortenedView)
   ListIconGadget(#Rows, 0, 0, 1, 1, "Seating order", 700, #PB_ListIcon_NoHeaders)
   TextGadget(#SelectedHeading, 0, 0, 1, 1, "")
   TextGadget(#SelectedHint, 0, 0, 1, 1, "")
@@ -263,7 +281,7 @@ Procedure.i OpenApplication()
   SetGadgetFont(#DetailsHeading, FontID(#FontHeading))
   SetGadgetFont(#Rows, FontID(#FontRows))
   GadgetToolTip(#PeopleInput, "Enter the number of distinct people, from 3 to 21.")
-  GadgetToolTip(#Compact, "Show starting rows and the cycles that expand them into the full schedule.")
+  GadgetToolTip(#ViewMode, "Shortened shows starting rows; Extended shows every sitting.")
   GadgetToolTip(#Rows, "Each row wraps around: its last and first people are neighbours.")
   AddKeyboardShortcut(#MainWindow, #PB_Shortcut_Return, #ActionGenerate)
   AddKeyboardShortcut(#MainWindow, #PB_Shortcut_Escape, #ActionCancel)

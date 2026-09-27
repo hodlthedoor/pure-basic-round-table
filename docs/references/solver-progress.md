@@ -37,3 +37,13 @@
 - Build outputs and visual QA artifacts stay ignored under `build/` and `artifacts/`. No added dependencies or external publication.
 - Final review found arrow navigation could stop at group separators. A new GUI check reproduced the failure; selection now skips separators in either direction. The reviewer confirmed the fix with no further findings.
 - Final verification after the fix: 10,716 solver assertions and 51 GUI checks passed; production app rebuilt successfully and `git diff --check` passed. All planned work is complete.
+
+## Shortened / Extended selector
+
+- User requested a plan followed by implementation; plan saved as `docs/superpowers/plans/2026-09-27-shortened-view.md`. Continued in the existing feature workspace.
+- Added failing all-count compact coverage checks: twelve counts lacked metadata. Regrouping algebraic schedules under field multiplication/translation resolved all twelve. Independent starter expansion checks exact displayed row equality, mapping, cycle closure and neighbour coverage. Solver suite: 45,378 assertions pass.
+- Independently exported and verified all 19 reordered schedules with the existing Python verifier. Existing seven published cyclic constructions retain their rows and successors.
+- Native selector defaults to Shortened and retains preference across generation, edits and cancellation. GUI startup check failed before implementation; 189 GUI checks now pass, covering all counts in both views and selection round trips.
+- The 10-person algebraic schedule has twelve 3-sitting groups; starter capacity increased from ten to twelve. This is a valid compact presentation, not a claim of minimal starting-row count or exact reproduction of the author's numerical schedules.
+- Screenshots inspected at default and minimum sizes. Horizontal scroll carryover was reproduced with a failing native test and fixed by resetting the list origin on repopulation.
+- Final review found no issues in generation, capacity, cancellation, preference retention or mapping. Follow-up review of the scroll correction and documentation also found no issues. Production app rebuilt and reopened.

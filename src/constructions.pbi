@@ -85,6 +85,74 @@ Procedure.i PrepareProjective(*job.GenerationJob)
   ProcedureReturn found
 EndProcedure
 
+; Regroup the affine schedule under a single permutation of its field labels.
+; Multiplication fixes zero/infinity; translation fixes infinity. Matching allows
+; reversed circular rows, but the output uses exact successive label substitutions.
+Procedure.i CompactProjective(*job.GenerationJob)
+  Protected n.i = *job\result\people, q.i = n - 1
+  Protected factor.i, value.i, period.i, i.i, r.i, g.i, turn.i, match.i, j.i
+  Protected direct.i, reversed.i, candidate.SeatingRow, ordered.Schedule
+  Protected Dim used.b(#MaximumSittings - 1)
+  If Mod(q, 2) = 0
+    For factor = 1 To q - 1
+      value = 1 : period = 0
+      Repeat
+        value = *job\multiplyTable(value, factor) : period + 1
+      Until value = 1 Or period >= q
+      If period = q - 1 And value = 1 : Break : EndIf
+    Next
+    If factor >= q : ProcedureReturn #False : EndIf
+    For i = 0 To q - 1
+      *job\successor[i + 1] = *job\multiplyTable(i, factor) + 1
+    Next
+  Else
+    value = 0 : period = 0
+    Repeat
+      value = *job\addTable(value, 1) : period + 1
+    Until value = 0 Or period >= q
+    If value <> 0 : ProcedureReturn #False : EndIf
+    For i = 0 To q - 1
+      *job\successor[i + 1] = *job\addTable(i, 1) + 1
+    Next
+  EndIf
+  *job\successor[n] = n
+  ordered\people = n
+  For r = 0 To *job\result\rowCount - 1
+    If used(r) : Continue : EndIf
+    If g >= #MaximumStartingRows : ProcedureReturn #False : EndIf
+    CopyStructure(@*job\result\rows[r], @candidate, SeatingRow)
+    candidate\group = g + 1
+    CopyStructure(@candidate, @*job\starters[g], SeatingRow)
+    For turn = 0 To period - 1
+      match = -1
+      For j = 0 To *job\result\rowCount - 1
+        If used(j) : Continue : EndIf
+        direct = #True : reversed = #True
+        For i = 1 To n - 1
+          If candidate\person[i] <> *job\result\rows[j]\person[i] : direct = #False : EndIf
+          If candidate\person[i] <> *job\result\rows[j]\person[n - i] : reversed = #False : EndIf
+        Next
+        If direct Or reversed : match = j : Break : EndIf
+      Next
+      If match < 0 Or ordered\rowCount >= #MaximumSittings : ProcedureReturn #False : EndIf
+      used(match) = #True
+      CopyStructure(@candidate, @ordered\rows[ordered\rowCount], SeatingRow)
+      ordered\rowCount + 1
+      For i = 0 To n - 1
+        candidate\person[i] = *job\successor[candidate\person[i]]
+      Next
+    Next
+    For i = 0 To n - 1
+      If candidate\person[i] <> *job\starters[g]\person[i] : ProcedureReturn #False : EndIf
+    Next
+    g + 1
+  Next
+  If ordered\rowCount <> *job\result\rowCount : ProcedureReturn #False : EndIf
+  CopyStructure(@ordered, @*job\result, Schedule)
+  *job\groupCount = g : *job\period = period : *job\cyclic = #True
+  ProcedureReturn #True
+EndProcedure
+
 ; Static numerical construction data; source labels have been converted to 1..n.
 ; n=7,11: Dudeney, Amusements in Mathematics, solution 273 (1917).
 ; n=13,15,16,19,21: Nakamura, Kiyasu-Zen'iti & Ikeno (1980), pp. 17-19.

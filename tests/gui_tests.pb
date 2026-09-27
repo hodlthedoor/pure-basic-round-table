@@ -95,7 +95,7 @@ Procedure PickRow(rowIndex.i)
   GUICheck(#False, "row is present " + Str(rowIndex + 1))
 EndProcedure
 
-Define item.i, count.i, appearance.i, name.i, deadline.q, scroll.i, clip.i, table.i
+Define n.i, item.i, count.i, appearance.i, name.i, deadline.q, scroll.i, clip.i, table.i
 Define bounds.QARect, position.QAPoint
 UsePNGImageDecoder()
 If CountProgramParameters() <> 1 : End 2 : EndIf
@@ -108,7 +108,11 @@ GUICheck(Bool(AppJob\result\people = 5 And AppJob\result\rowCount = 6), "startup
 appearance = CocoaMessage(0, WindowID(#MainWindow), "effectiveAppearance")
 name = CocoaMessage(0, appearance, "name")
 GUICheck(CocoaMessage(0, name, "isEqualToString:$", @"NSAppearanceNameAqua"), "paper background uses readable light controls")
+GUICheck(Bool(GetGadgetState(#ViewMode) = #ShortenedView And CountGadgetItems(#Rows) = 2), "startup defaults to two shortened rows")
 Capture("05-default")
+SetGadgetState(#ViewMode, #ExtendedView)
+PostEvent(#PB_Event_Gadget, #MainWindow, #ViewMode) : Pump(30)
+GUICheck(Bool(CountGadgetItems(#Rows) = 7), "five-person extended view includes six sittings and separator")
 GenerateFor(3) : Capture("03-minimum-people")
 GenerateFor(13) : PickRow(65) : Capture("13-last-sitting")
 GenerateFor(21)
@@ -119,14 +123,14 @@ Next
 GUICheck(Bool(count = 190), "all 190 sittings are represented")
 PickRow(189) : Capture("21-last-sitting")
 PickRow(37)
-SetGadgetState(#Compact, 1)
-PostEvent(#PB_Event_Gadget, #MainWindow, #Compact)
+SetGadgetState(#ViewMode, #ShortenedView)
+PostEvent(#PB_Event_Gadget, #MainWindow, #ViewMode)
 Pump(40)
 GUICheck(Bool(CountGadgetItems(#Rows) = 10 And SelectedRow = 19), "compact view selects matching starting row")
-GUICheck(Bool(FindString(GetGadgetText(#Details), "Fixed labels: 1, 21.") > 0), "correct fixed labels shown")
+GUICheck(Bool(FindString(GetGadgetText(#Details), "Repeaters (fixed): 1, 21.") > 0), "correct fixed labels shown")
 Capture("21-starting-rows")
-SetGadgetState(#Compact, 0)
-PostEvent(#PB_Event_Gadget, #MainWindow, #Compact)
+SetGadgetState(#ViewMode, #ExtendedView)
+PostEvent(#PB_Event_Gadget, #MainWindow, #ViewMode)
 Pump(40)
 GUICheck(Bool(SelectedRow = 19), "expanded view retains first sitting of selected group")
 SetGadgetState(#Rows, 19)
@@ -158,7 +162,9 @@ If scroll
   Capture("21-minimum-window-scrolled")
 EndIf
 GenerateFor(7)
-SetGadgetState(#Compact, 1) : PostEvent(#PB_Event_Gadget, #MainWindow, #Compact) : Pump(30)
+CocoaMessage(@bounds, clip, "bounds")
+GUICheck(Bool(bounds\x = 0), "new solution starts at first label after horizontal scrolling")
+SetGadgetState(#ViewMode, #ShortenedView) : PostEvent(#PB_Event_Gadget, #MainWindow, #ViewMode) : Pump(30)
 GUICheck(Bool(CountString(GetGadgetText(#Details), "Cycle:") = 2), "seven-person solution explains both cycles")
 EditCount("22")
 PostEvent(#PB_Event_Menu, #MainWindow, #ActionGenerate)
@@ -172,7 +178,23 @@ CocoaMessage(0, GadgetID(#Cancel), "performClick:", 0)
 Pump(50)
 GUICheck(Bool(AppJob\state = #Cancelled And PublishedJobId = 0 And AppJob\result\rowCount = 0), "native Cancel clears partial generation")
 GenerateFor(5)
-GUICheck(Bool(GetGadgetState(#Compact) = 0), "algebraic result returns to expanded view")
+GUICheck(Bool(GetGadgetState(#ViewMode) = #ShortenedView), "shortened preference survives cancellation and replacement")
+For n = 3 To 21
+  GenerateFor(n)
+  GUICheck(Bool(GetGadgetState(#ViewMode) = #ShortenedView And CountGadgetItems(#Rows) = AppJob\groupCount), "shortened view for " + Str(n))
+  SetGadgetState(#ViewMode, #ExtendedView)
+  PostEvent(#PB_Event_Gadget, #MainWindow, #ViewMode) : Pump(30)
+  count = 0
+  For item = 0 To CountGadgetItems(#Rows) - 1
+    If GetGadgetItemData(#Rows, item) > 0 : count + 1 : EndIf
+  Next
+  GUICheck(Bool(count = AppJob\result\rowCount), "extended view for " + Str(n))
+  PickRow(AppJob\result\rowCount - 1)
+  SetGadgetState(#ViewMode, #ShortenedView)
+  PostEvent(#PB_Event_Gadget, #MainWindow, #ViewMode) : Pump(30)
+  GUICheck(Bool(SelectedRow = (AppJob\groupCount - 1) * AppJob\period), "last sitting maps to shortened group " + Str(n))
+  If n = 10 : Capture("10-shortened-cycles") : EndIf
+Next
 PostEvent(#PB_Event_CloseWindow, #MainWindow, 0)
 Pump(30)
 GUICheck(Bool(Not QAOpen And Not TimerRunning), "window closes and stops timer")

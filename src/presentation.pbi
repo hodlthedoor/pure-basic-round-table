@@ -21,13 +21,16 @@ Procedure.s ConstructionDetails(*job.GenerationJob)
   If Not *job\cyclic
     ProcedureReturn "An algebraic relabelling rule generates this schedule. Reversed duplicates are removed." + #LF$ + #LF$ + "Every person sits between each possible pair of neighbours exactly once."
   EndIf
+  If *job\result\rowCount = 1
+    ProcedureReturn "Only one sitting is needed. Shortened and Extended show the same row."
+  EndIf
   For i = 1 To *job\result\people
     If *job\successor[i] = i
       If fixed <> "" : fixed + ", " : EndIf
       fixed + Str(i) : visited(i) = 1
     EndIf
   Next
-  text = "Fixed labels: " + fixed + "." + #LF$
+  text = "Repeaters (fixed): " + fixed + "." + #LF$
   For i = 1 To *job\result\people
     If Not visited(i)
       person = i : cycle = Str(i)

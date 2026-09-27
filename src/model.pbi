@@ -3,6 +3,7 @@ EnableExplicit
 #MinimumPeople = 3
 #MaximumPeople = 21
 #MaximumSittings = 190
+#MaximumStartingRows = 12
 
 Enumeration
   #Idle
@@ -30,7 +31,7 @@ Structure GenerationJob
   cyclic.i
   groupCount.i
   period.i
-  starters.SeatingRow[10]
+  starters.SeatingRow[#MaximumStartingRows]
   successor.i[22]
   cursor.i
   totalCandidates.i
