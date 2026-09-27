@@ -1,54 +1,109 @@
 # The Round Table
 
-A native PureBasic application for Henry Ernest Dudeney's problem 273 in *Amusements in Mathematics*. Choose 3 to 21 people to generate a complete, independently verified seating schedule.
+Explore Henry Ernest Dudeney's round-table puzzle: seat a group over several sittings so that each person sits between every possible pair of neighbours exactly once.
 
-## Run
+Choose **3 to 21 people**, generate a solution, and select a row to see how everyone sits around the table. The app runs offline on macOS.
 
-The built application is at `build/The Round Table.app`. Open it in Finder, or run:
+![The Round Table showing the shortened five-person solution and its seating diagram](docs/images/round-table.png)
 
-```sh
-open "build/The Round Table.app"
+## Open the app
+
+If you already have a built copy, double-click **The Round Table.app**. In this project, it is created in the `build` folder.
+
+If you downloaded or cloned the source from GitHub, follow [Build from source](#build-from-source) first. The generated app is not included in the repository.
+
+## Try your first solution
+
+1. Open the app. It starts with a solution for five people.
+2. Enter a whole number from **3 to 21** in **People**, then click **Generate** or press **Enter**.
+3. Use **View** to choose **Shortened** or **Extended**.
+4. Click a numerical row to see its seating diagram.
+
+Read a row from left to right, or the diagram clockwise from the highlighted person at the top. The row wraps around: the last person sits beside the first. The highlight marks where to start reading; it does not identify a repeater.
+
+The **Verified** message means the app has checked the complete schedule for the required neighbour pairs before showing it.
+
+## Choose a view
+
+| View | What you see | Use it to |
+| --- | --- | --- |
+| **Shortened** | Starting rows, repeaters and cycling instructions | Read a compact solution in Dudeney's style |
+| **Extended** | Every individual sitting, separated into groups | Inspect each seating arrangement directly |
+
+The app opens in Shortened and remembers your choice when you generate another solution during that session. Switching from Extended to Shortened selects the starting row for the current sitting's group. Switching back selects that group's first sitting.
+
+For five people, the two starting rows expand into six sittings. For twenty-one, ten starting rows expand into 190 sittings. Three people need only one sitting, so both views show the same row.
+
+### Read the shortened instructions
+
+A **repeater** is a label that stays unchanged. A **cycle** tells you how to replace the other labels to produce the next sitting.
+
+For example, the five-person solution keeps labels **1** and **5** fixed and uses this cycle:
+
+```text
+2 → 3 → 4 → 2
 ```
 
-To build from source on macOS:
+Replace every 2 with 3, every 3 with 4, and every 4 with 2, all at the same time. One starting row produces these three sittings:
+
+```text
+5 4 3 2 1    starting row
+5 2 4 3 1    advance the cycle once
+5 3 2 4 1    advance it again
+```
+
+The next advance returns to the starting row. Apply the same process to each starting row. If the instructions list several cycles, advance all of them together.
+
+The app uses Dudeney's presentation method. Its generated rows and cycles can differ from his printed examples, and the shortened view does not always use the fewest possible starting rows.
+
+## Controls and display
+
+- **Enter** generates a solution; **Cancel** or **Escape** stops a pending generation.
+- Editing the number clears the old answer. Press Generate to calculate the replacement.
+- Use the arrow keys while the seating list is focused to move between rows. Group separators are skipped.
+- Enlarge the window for more space. In a narrower window, scroll the seating list horizontally to reach the remaining labels and vertically to see more sittings.
+
+If you see “Enter a whole number from 3 to 21,” replace the input with a number in that range. Supporting larger groups requires further verified constructions.
+
+## Build from source
+
+The current application uses macOS native controls. It has been built and tested with **PureBasic 6.41 Free, C backend, on an Apple Silicon Mac**.
+
+Install PureBasic at `/Applications/PureBasic.app`, then open Terminal in the project folder and run:
 
 ```sh
 scripts/build.sh app
+open "build/The Round Table.app"
 ```
 
-This project was built and checked with PureBasic 6.41 Free, C backend, on macOS arm64. The build script expects PureBasic in `/Applications/PureBasic.app`. For another installation, set `PUREBASIC_HOME` to its `Contents/Resources` directory. You can also open `src/main.pb` in the PureBasic IDE and compile it as a graphical application.
+If PureBasic is installed elsewhere, supply its Resources directory:
 
-The application runs offline with no Python or third-party runtime dependency.
+```sh
+PUREBASIC_HOME="/path/to/PureBasic.app/Contents/Resources" scripts/build.sh app
+```
 
-## Use
+You can also open `src/main.pb` in the PureBasic IDE and compile it as a graphical application. Once built, the app runs without Python or the PureBasic IDE.
 
-Enter the number of people and choose **Generate**, or press Enter. Each numerical row is one clockwise seating; the last person sits beside the first. Select a row to see its table diagram. The highlighted person is the start of that displayed row, not necessarily a fixed person across the schedule.
+## About the puzzle
 
-Use the **View** selector to switch between **Shortened** and **Extended** for any supported count. The app opens in Shortened, showing starting rows alongside repeaters (fixed labels) and the cycles to advance together. Extended lists every sitting. Your choice is retained when generating another solution during the session. Switching back to Extended selects the first sitting generated by the selected starting row. Group separators are not seatings.
+This is problem **273, “The Round Table,”** in Dudeney's *Amusements in Mathematics* (1917). A complete solution requires `(n - 1)(n - 2) / 2` sittings. Left and right neighbours count as the same pair when their order is reversed.
 
-For five people, Shortened shows two starting rows instead of six sittings; for twenty-one it shows ten instead of 190. Three people require only one sitting, so both views show the same row. This follows Dudeney's presentation method; generated numerical rows and cycle choices need not match his examples or use the fewest possible starting rows.
+Read the [original problem and published solution](docs/references/problem-273-the-round-table.md), or browse the [complete public-domain book](docs/references/amusements-in-mathematics.txt). The [feasibility report](docs/references/solver-feasibility.md) explains the constructions and their sources.
 
-The window can be resized. At smaller widths, scroll horizontally to see all 21 labels. Cancel or Escape stops pending generation; editing the count clears the previous answer. Results are displayed only after verification.
+## For contributors
 
-## The problem
-
-Every person must sit between every unordered pair of other people exactly once. The required number of sittings is `(n - 1)(n - 2) / 2`: 6 for five people, 66 for thirteen, and 190 for twenty-one. This is a schedule-construction problem, rather than the simpler factorial count of circular permutations.
-
-For algebraic schedules, the app groups equivalent rows under a verified label permutation: field multiplication for even field orders, translation for odd orders. It records genuine starting rows and cycles, then independently verifies the reordered schedule. The ten-person case uses twelve starting rows, each expanding to three sittings.
-
-The generator uses the verified finite-field construction for twelve counts and expands 49 published starting rows for the other seven: 7, 11, 13, 15, 16, 19 and 21. The [feasibility report](docs/references/solver-feasibility.md) documents those methods and their sources. Supporting a larger count requires another verified construction, rather than just increasing a numeric limit.
-
-The [original problem and solution](docs/references/problem-273-the-round-table.md) and the complete public-domain book are included under `docs/references/`.
-
-## Verify
+Run the calculation tests with:
 
 ```sh
 scripts/build.sh test
+```
+
+To exercise the native interface and capture screenshots:
+
+```sh
 scripts/build.sh gui-test
 ```
 
-The solver tests exercise all 19 counts, repeated jobs in one process, circular neighbour coverage, damaged schedules, input validation, bounded batches, cancellation and view mapping. They currently pass 45,378 assertions.
+GUI checks require a logged-in macOS desktop and permission to capture windows. Logs and screenshots are written to `artifacts/`.
 
-The separate GUI test application drives native buttons and the application's event handlers. It checks publication, clearing, row selection, compact view, scrolling, cancellation and closing. Window screenshots and the GUI log are written to `artifacts/`. This test requires a logged-in macOS desktop and permission to capture windows; it does not require accessibility control. It does not alter the production application or add automation hooks to it.
-
-Sources are split between `src/solver.pbi` and `src/constructions.pbi` for generation, `src/verify.pbi` for independent checking, and `src/app.pbi`, `src/presentation.pbi` and `src/drawing.pbi` for the interface. `src/main.pb` is the entry point.
+Start with `src/main.pb` for the application entry point, `src/app.pbi` for the interface, and `src/solver.pbi` for generation. The independent schedule checker is in `src/verify.pbi`.
